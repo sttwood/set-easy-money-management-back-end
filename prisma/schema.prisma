@@ -47,45 +47,32 @@ model VerificationToken {
 }
 
 model User {
-  id             String     @id @default(cuid())
+  id             String          @id @default(cuid())
   first_name     String?
   last_name      String?
   password       String
-  email          String     @unique
+  email          String          @unique
   email_verified DateTime?
   phone          String?
   image          String?
   role           String?
   accounts       Account[]
   sessions       Session[]
-  income         Income[]
-  expense        Expense[]
+  income_expense IncomeExpense[]
   savings        Savings[]
   category       Category[]
 }
 
 model Category {
-  id      Int       @id @default(autoincrement())
-  user_id String
-  name    String
-  type    String
-  income  Income[]
-  expense Expense[]
-  user    User      @relation(fields: [user_id], references: [id])
+  id             Int             @id @default(autoincrement())
+  user_id        String
+  name           String
+  type           String
+  income_expense IncomeExpense[]
+  user           User            @relation(fields: [user_id], references: [id])
 }
 
-model Income {
-  id          Int      @id @default(autoincrement())
-  user_id     String
-  category_id Int
-  amount      String
-  note        String
-  date        DateTime
-  user        User     @relation(fields: [user_id], references: [id])
-  category    Category @relation(fields: [category_id], references: [id])
-}
-
-model Expense {
+model IncomeExpense {
   id          Int      @id @default(autoincrement())
   user_id     String
   category_id Int
@@ -100,10 +87,10 @@ model Savings {
   id             Int      @id @default(autoincrement())
   user_id        String
   amount         String
-  present_amount String
-  interest       String
+  present_amount String?
+  interest       String?
   interest_rate  String
-  total_amount   String
+  total_amount   String?
   date           DateTime
   user           User     @relation(fields: [user_id], references: [id])
 }

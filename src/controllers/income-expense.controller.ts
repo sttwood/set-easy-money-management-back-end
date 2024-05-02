@@ -1,11 +1,11 @@
 import {PrismaClient} from "@prisma/client";
 
-const incomeClient = new PrismaClient().income;
+const incomeClient = new PrismaClient().incomeExpense;
 
 //@Title    Get All
 //@Method   GET
-//@Path     /incomes/:id
-export const getIncomes = async (req, res) => {
+//@Path     /incomes-expenses/:id
+export const getIncomesExpenses = async (req, res) => {
   try {
     const userId = req.params.id
     const incomes = await incomeClient.findMany({
@@ -22,8 +22,8 @@ export const getIncomes = async (req, res) => {
 
 //@Title    Get One
 //@Method   GET
-//@Path     /income/:id
-export const getIncomeById = async (req, res) => {
+//@Path     /income-expense/:id
+export const getIncomeExpenseById = async (req, res) => {
   try {
     const incomeId = req.params.id
     const incomes = await incomeClient.findUnique({
@@ -40,8 +40,8 @@ export const getIncomeById = async (req, res) => {
 
 //@Title    Create Income
 //@Method   POST
-//@Path     /income
-export const createIncome = async (req, res) => {
+//@Path     /income-expense
+export const createIncomeExpense = async (req, res) => {
   try {
     const incomeBody = req.body
     const income = await incomeClient.create({data: incomeBody})
@@ -54,8 +54,8 @@ export const createIncome = async (req, res) => {
 
 //@Title    Update Income
 //@Method   PATCH
-//@Path     /income/:id
-export const updateIncome = async (req, res) => {
+//@Path     /income-expense/:id
+export const updateIncomeExpense = async (req, res) => {
   try {
     const incomeId = req.params.id
     const incomeBody = req.body
@@ -74,8 +74,8 @@ export const updateIncome = async (req, res) => {
 
 //@Title    Delete income
 //@Method   DELETE
-//@Path     /income/:id
-export const deleteIncome = async (req, res) => {
+//@Path     /income-expense/:id
+export const deleteIncomeExpense = async (req, res) => {
   try {
     const incomeId = req.params.id
     const income = await incomeClient.delete({
