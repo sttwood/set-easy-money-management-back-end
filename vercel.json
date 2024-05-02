@@ -4,10 +4,6 @@
     {
       "src": "./src/index.ts",
       "use": "@vercel/node"
-    },
-    {
-      "src": "npx prisma generate",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
