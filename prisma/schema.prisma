@@ -75,7 +75,7 @@ model Category {
 }
 
 model Income {
-  id          String   @id @default(cuid())
+  id          Int      @id @default(autoincrement())
   user_id     String
   category_id Int
   amount      String
@@ -86,7 +86,7 @@ model Income {
 }
 
 model Expense {
-  id          String   @id @default(cuid())
+  id          Int      @id @default(autoincrement())
   user_id     String
   category_id Int
   amount      String
@@ -97,7 +97,7 @@ model Expense {
 }
 
 model Savings {
-  id             String   @id @default(cuid())
+  id             Int      @id @default(autoincrement())
   user_id        String
   amount         String
   present_amount String

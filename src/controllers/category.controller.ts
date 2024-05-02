@@ -4,7 +4,7 @@ const categoryClient = new PrismaClient().category;
 
 //@Title    Get All
 //@Method   GET
-//@Path     /category
+//@Path     /categories/:id
 export const getCategories = async (req, res) => {
   try {
     const userId = req.params.id
@@ -15,6 +15,24 @@ export const getCategories = async (req, res) => {
     })
 
     res.status(200).json({status: 'success', data: categories})
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+//@Title    Get One
+//@Method   GET
+//@Path     /category/:id
+export const getCategoryById = async (req, res) => {
+  try {
+    const categoryId = req.params.id
+    const category = await categoryClient.findUnique({
+      where: {
+        id: Number(categoryId)
+      }
+    })
+
+    res.status(200).json({status: 'success', data: category})
   } catch (error) {
     console.error(error)
   }
