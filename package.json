@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "node src/index.ts",
     "migrate": "prisma migrate dev",
+    "build": "prisma generate --no-engine && next build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
