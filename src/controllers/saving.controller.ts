@@ -116,9 +116,6 @@ export const updateSaving = async (req, res) => {
       return res.status(400).json({status: 'error', message: 'Invalid amount'});
     }
 
-    // Prepare updated values
-    const presentAmountNumber = Number(existingSaving.present_amount) + amountNumber;
-
     // Handle optional fields
     let interestRate = existingSaving.interest_rate;
     if (interest_rate) {
@@ -130,17 +127,19 @@ export const updateSaving = async (req, res) => {
       return res.status(400).json({status: 'error', message: 'Invalid interest rate'});
     }
 
-    const interestNumber = (interestRateNumber * presentAmountNumber) / 100
-    const totalAmountNumber = presentAmountNumber + interestNumber
+    // Calculate new values for the specific record
+    const newPresentAmount = Number(existingSaving.present_amount) + amountNumber;
+    const newInterest = (interestRateNumber * newPresentAmount) / 100;
+    const newTotalAmount = newPresentAmount + newInterest;
 
     // Prepare the updated data
     const updatedSavingBody = {
       user_id: existingSaving.user_id,
       amount: String(amountNumber),
       interest_rate: String(interestRate),
-      present_amount: String(presentAmountNumber),
-      interest: String(interestNumber),
-      total_amount: String(totalAmountNumber),
+      present_amount: String(newPresentAmount),
+      interest: String(newInterest),
+      total_amount: String(newTotalAmount),
       date: existingSaving.date
     }
 
@@ -172,7 +171,7 @@ export const updateSaving = async (req, res) => {
     })
 
     // Update subsequent records
-    let prevTotalAmount = totalAmountNumber
+    let prevTotalAmount = newTotalAmount
     for (let i = 0; i < savings.length; i++) {
       const saving = savings[ i ]
       if (saving.id > Number(savingId)) {
