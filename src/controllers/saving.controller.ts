@@ -1,6 +1,6 @@
-import {PrismaClient} from "@prisma/client";
+import {PrismaClient} from "@prisma/client"
 
-const savingClient = new PrismaClient().savings;
+const savingClient = new PrismaClient().savings
 
 //@Title    Get All
 //@Method   GET
@@ -43,41 +43,51 @@ export const getSavingById = async (req, res) => {
 //@Path     /saving
 export const createSaving = async (req, res) => {
   try {
-    // const {id, amount, interest_rate} = req.body
+    const {user_id, amount, interest_rate, date} = req.body
 
-    // const findSaving = await savingClient.findUnique({
-    //   where: {
-    //     id: Number(id)
-    //   }
-    // })
+    // Convert amount and interest_rate to numbers for calculations
+    const amountNumber = Number(amount)
+    const interestRate = Number(interest_rate)
 
-    // if (findSaving) {
-    //   console.log(findSaving)
-    //   res.status(200).json({status: 'success', data: findSaving})
-    // } else {
-    // const amountNumber = Number(amount)
-    // const interestRate = Number(interest_rate)
+    // Check if a saving record already exists for the user
+    const existingSaving = await savingClient.findFirst({
+      where: {
+        user_id: user_id
+      },
+      orderBy: {
+        date: 'desc'
+      }
+    })
 
-    // const presentAmountNumber = amountNumber
-    // const interestNumber = (interestRate * + amountNumber) / 100
-    // const totalAmountNumber = presentAmountNumber + interestNumber
+    let presentAmountNumber = amountNumber
+    let interestNumber = (interestRate * amountNumber) / 100
+    let totalAmountNumber = presentAmountNumber + interestNumber
 
-    const savingBody = req.body
-    // const savingBody = {
-    //   ...req.body,
-    //   present_amount: String(presentAmountNumber),
-    //   interest: String(interestNumber),
-    //   total_amount: String(totalAmountNumber),
-    // }
-    const saving = await savingClient.create({data: savingBody})
-    console.log(savingBody)
+    if (existingSaving) {
+      // Calculate based on existing data
+      presentAmountNumber = Number(existingSaving.total_amount) + amountNumber;
+      interestNumber = (interestRate * presentAmountNumber) / 100;
+      totalAmountNumber = presentAmountNumber + interestNumber;
+    }
+
+    // Create new record
+    const savingBody = {
+      user_id,
+      amount: String(amountNumber),
+      interest_rate: String(interestRate),
+      present_amount: String(presentAmountNumber),
+      interest: String(interestNumber),
+      total_amount: String(totalAmountNumber),
+      date: new Date(date)
+    }
+
+    const saving = await savingClient.create({data: savingBody});
+
     res.status(200).json({status: 'success', data: saving})
-    // }
-
-
 
   } catch (error) {
     console.error(error)
+    res.status(500).json({status: 'error', message: 'Internal Server Error'})
   }
 }
 
@@ -86,18 +96,83 @@ export const createSaving = async (req, res) => {
 //@Path     /saving/:id
 export const updateSaving = async (req, res) => {
   try {
+    const {amount, interest_rate, date} = req.body
     const savingId = req.params.id
-    const savingBody = {
-      ...req.body
+
+    // Fetch the existing saving record by ID
+    const existingSaving = await savingClient.findUnique({
+      where: {
+        id: Number(savingId)
+      }
+    })
+
+    if (!existingSaving) {
+      return res.status(404).json({status: 'error', message: 'Saving record not found'})
     }
-    const saving = await savingClient.update({
+
+    // Convert amount and interest_rate to numbers for calculations
+    const amountNumber = Number(amount)
+    const interestRate = Number(interest_rate)
+
+    // Calculate based on existing data
+    const presentAmountNumber = Number(existingSaving.present_amount) + amountNumber
+    const interestNumber = (interestRate * presentAmountNumber) / 100
+    const totalAmountNumber = presentAmountNumber + interestNumber
+
+    // Prepare the updated data
+    const updatedSavingBody = {
+      user_id: existingSaving.user_id,
+      amount: String(amountNumber),
+      interest_rate: String(interestRate),
+      present_amount: String(presentAmountNumber),
+      interest: String(interestNumber),
+      total_amount: String(totalAmountNumber),
+      date: new Date(date)
+    }
+
+    // Update the specific saving record
+    const updatedSaving = await savingClient.update({
       where: {
         id: Number(savingId)
       },
-      data: savingBody
+      data: updatedSavingBody
     })
 
-    res.status(200).json({status: 'success', data: saving})
+    // Fetch all savings records for the user ordered by date
+    const savings = await savingClient.findMany({
+      where: {
+        user_id: existingSaving.user_id
+      },
+      orderBy: {
+        date: 'asc'
+      }
+    })
+
+    // Update subsequent records
+    let prevTotalAmount = totalAmountNumber
+    for (let i = 0; i < savings.length; i++) {
+      const saving = savings[ i ]
+      if (saving.id > Number(savingId)) {
+        const newPresentNumber = prevTotalAmount + Number(saving.amount)
+        const newInterest = (Number(saving.interest_rate) * newPresentNumber) / 100
+        const newTotalAmount = newPresentNumber + newInterest
+
+        await savingClient.update({
+          where: {
+            id: saving.id
+          },
+          data: {
+            present_amount: String(newPresentNumber),
+            interest: String(newInterest),
+            total_amount: String(newTotalAmount)
+          }
+        })
+
+        prevTotalAmount = newTotalAmount
+      }
+    }
+
+    res.status(200).json({status: 'success', data: updatedSaving})
   } catch (error) {
     console.error(error)
   }
