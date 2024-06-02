@@ -65,9 +65,9 @@ export const createSaving = async (req, res) => {
 
     if (existingSaving) {
       // Calculate based on existing data
-      presentAmountNumber = Number(existingSaving.total_amount) + amountNumber;
-      interestNumber = (interestRate * presentAmountNumber) / 100;
-      totalAmountNumber = presentAmountNumber + interestNumber;
+      presentAmountNumber = Number(existingSaving.total_amount) + amountNumber
+      interestNumber = (interestRate * presentAmountNumber) / 100
+      totalAmountNumber = presentAmountNumber + interestNumber
     }
 
     // Create new record
@@ -81,7 +81,7 @@ export const createSaving = async (req, res) => {
       date: new Date(date)
     }
 
-    const saving = await savingClient.create({data: savingBody});
+    const saving = await savingClient.create({data: savingBody})
 
     res.status(200).json({status: 'success', data: saving})
 
@@ -97,13 +97,11 @@ export const createSaving = async (req, res) => {
 export const updateSaving = async (req, res) => {
   try {
     const {amount, interest_rate, date} = req.body
-    const savingId = req.params.id
+    const savingId = Number(req.params.id)
 
     // Fetch the existing saving record by ID
     const existingSaving = await savingClient.findUnique({
-      where: {
-        id: Number(savingId)
-      }
+      where: {id: savingId},
     })
 
     if (!existingSaving) {
@@ -111,92 +109,96 @@ export const updateSaving = async (req, res) => {
     }
 
     // Convert amount to number for calculations
-    const amountNumber = Number(amount);
+    const amountNumber = Number(amount)
     if (isNaN(amountNumber)) {
-      return res.status(400).json({status: 'error', message: 'Invalid amount'});
+      return res.status(400).json({status: 'error', message: 'Invalid amount'})
     }
 
     // Handle optional fields
-    let interestRate = existingSaving.interest_rate;
+    let interestRate = existingSaving.interest_rate
     if (interest_rate) {
-      interestRate = interest_rate;
+      interestRate = interest_rate
     }
 
-    const interestRateNumber = Number(interestRate);
+    const interestRateNumber = Number(interestRate)
     if (isNaN(interestRateNumber)) {
-      return res.status(400).json({status: 'error', message: 'Invalid interest rate'});
+      return res.status(400).json({status: 'error', message: 'Invalid interest rate'})
     }
 
-    // Calculate new values for the specific record
-    const newPresentAmount = Number(existingSaving.total_amount) + amountNumber;
-    const newInterest = (interestRateNumber * newPresentAmount) / 100;
-    const newTotalAmount = newPresentAmount + newInterest;
+    // Fetch all savings records for the user ordered by date
+    const savings = await savingClient.findMany({
+      where: {user_id: existingSaving.user_id},
+      orderBy: {id: 'asc'},
+    })
+
+    // Find the index of the current record in the list
+    const index = savings.findIndex((saving) => saving.id === savingId)
+    if (index === -1) {
+      return res.status(404).json({status: 'error', message: 'Saving record not found in user savings'})
+    }
+
+    // Calculate based on the previous record's total_amount
+    let previousTotalAmount = 0
+    if (index > 0) {
+      previousTotalAmount = Number(savings[ index - 1 ].total_amount)
+    }
+
+    const newPresentAmount = previousTotalAmount + amountNumber
+    const newInterest = (interestRateNumber * newPresentAmount) / 100
+    const newTotalAmount = newPresentAmount + newInterest
 
     // Prepare the updated data
     const updatedSavingBody = {
       user_id: existingSaving.user_id,
       amount: String(amountNumber),
-      interest_rate: String(interestRate),
+      interest_rate: String(interestRateNumber),
       present_amount: String(newPresentAmount),
       interest: String(newInterest),
       total_amount: String(newTotalAmount),
-      date: existingSaving.date
+      date: existingSaving.date, // Default to existing date
     }
 
     // If date is provided, update it
     if (date) {
-      const newDate = new Date(date);
+      const newDate = new Date(date)
       if (isNaN(newDate.getTime())) {
-        return res.status(400).json({status: 'error', message: 'Invalid date format'});
+        return res.status(400).json({status: 'error', message: 'Invalid date format'})
       }
-      updatedSavingBody.date = newDate;
+      updatedSavingBody.date = newDate
     }
 
     // Update the specific saving record
     const updatedSaving = await savingClient.update({
-      where: {
-        id: Number(savingId)
-      },
-      data: updatedSavingBody
-    })
-
-    // Fetch all savings records for the user ordered by date
-    const savings = await savingClient.findMany({
-      where: {
-        user_id: existingSaving.user_id
-      },
-      orderBy: {
-        id: 'asc'
-      }
+      where: {id: savingId},
+      data: updatedSavingBody,
     })
 
     // Update subsequent records
     let prevTotalAmount = newTotalAmount
-    for (let i = 0; i < savings.length; i++) {
+    const updatedAndSubsequentRecords = [ updatedSaving ]
+    for (let i = index + 1; i < savings.length; i++) {
       const saving = savings[ i ]
-      if (saving.id > Number(savingId)) {
-        const newPresentNumber = prevTotalAmount + Number(saving.amount)
-        const newInterest = (Number(saving.interest_rate) * newPresentNumber) / 100
-        const newTotalAmount = newPresentNumber + newInterest
+      const newPresentAmount = prevTotalAmount + Number(saving.amount)
+      const newInterest = (Number(saving.interest_rate) * newPresentAmount) / 100
+      const newTotalAmount = newPresentAmount + newInterest
 
-        await savingClient.update({
-          where: {
-            id: saving.id
-          },
-          data: {
-            present_amount: String(newPresentNumber),
-            interest: String(newInterest),
-            total_amount: String(newTotalAmount)
-          }
-        })
+      const updatedSavingRecord = await savingClient.update({
+        where: {id: saving.id},
+        data: {
+          present_amount: String(newPresentAmount),
+          interest: String(newInterest),
+          total_amount: String(newTotalAmount),
+        },
+      })
 
-        prevTotalAmount = newTotalAmount
-      }
+      updatedAndSubsequentRecords.push(updatedSavingRecord)
+      prevTotalAmount = newTotalAmount
     }
 
-    res.status(200).json({status: 'success', data: updatedSaving})
+    res.status(200).json({status: 'success', data: updatedAndSubsequentRecords})
   } catch (error) {
     console.error(error)
+    res.status(500).json({status: 'error', message: 'Internal Server Error'})
   }
 }
 
