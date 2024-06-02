@@ -53,7 +53,7 @@ export const createSaving = async (req, res) => {
 
     if (findSaving) {
       console.log(findSaving)
-
+      res.status(200).json({status: 'success', data: findSaving})
     } else {
       const amountNumber = Number(amount)
       const interestRate = Number(interest_rate)
@@ -62,14 +62,14 @@ export const createSaving = async (req, res) => {
       const interestNumber = (interestRate * + amountNumber) / 100
       const totalAmountNumber = presentAmountNumber + interestNumber
 
-      const svaingBody = {
+      const savingBody = {
         ...req.body,
         present_amount: String(presentAmountNumber),
         interest: String(interestNumber),
         total_amount: String(totalAmountNumber),
       }
-      const saving = await savingClient.create({data: svaingBody})
-
+      const saving = await savingClient.create({data: savingBody})
+      console.log(savingBody)
       res.status(200).json({status: 'success', data: saving})
     }
 
