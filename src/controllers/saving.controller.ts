@@ -110,13 +110,27 @@ export const updateSaving = async (req, res) => {
       return res.status(404).json({status: 'error', message: 'Saving record not found'})
     }
 
-    // Convert amount and interest_rate to numbers for calculations
-    const amountNumber = Number(amount)
-    const interestRate = Number(interest_rate)
+    // Convert amount to number for calculations
+    const amountNumber = Number(amount);
+    if (isNaN(amountNumber)) {
+      return res.status(400).json({status: 'error', message: 'Invalid amount'});
+    }
 
-    // Calculate based on existing data
-    const presentAmountNumber = Number(existingSaving.present_amount) + amountNumber
-    const interestNumber = (interestRate * presentAmountNumber) / 100
+    // Prepare updated values
+    const presentAmountNumber = Number(existingSaving.present_amount) + amountNumber;
+
+    // Handle optional fields
+    let interestRate = existingSaving.interest_rate;
+    if (interest_rate) {
+      interestRate = interest_rate;
+    }
+
+    const interestRateNumber = Number(interestRate);
+    if (isNaN(interestRateNumber)) {
+      return res.status(400).json({status: 'error', message: 'Invalid interest rate'});
+    }
+
+    const interestNumber = (interestRateNumber * presentAmountNumber) / 100
     const totalAmountNumber = presentAmountNumber + interestNumber
 
     // Prepare the updated data
@@ -127,7 +141,16 @@ export const updateSaving = async (req, res) => {
       present_amount: String(presentAmountNumber),
       interest: String(interestNumber),
       total_amount: String(totalAmountNumber),
-      date: new Date(date)
+      date: existingSaving.date
+    }
+
+    // If date is provided, update it
+    if (date) {
+      const newDate = new Date(date);
+      if (isNaN(newDate.getTime())) {
+        return res.status(400).json({status: 'error', message: 'Invalid date format'});
+      }
+      updatedSavingBody.date = newDate;
     }
 
     // Update the specific saving record
