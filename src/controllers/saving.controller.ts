@@ -55,7 +55,7 @@ export const createSaving = async (req, res) => {
         user_id: user_id
       },
       orderBy: {
-        date: 'desc'
+        id: 'desc'
       }
     })
 
@@ -144,7 +144,7 @@ export const updateSaving = async (req, res) => {
         user_id: existingSaving.user_id
       },
       orderBy: {
-        date: 'asc'
+        id: 'asc'
       }
     })
 
