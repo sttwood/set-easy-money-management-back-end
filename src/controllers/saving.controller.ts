@@ -4,7 +4,7 @@ const savingClient = new PrismaClient().savings;
 
 //@Title    Get All
 //@Method   GET
-//@Path     /savings/:id
+//@Path     /savings/:user_id
 export const getSavings = async (req, res) => {
   try {
     const userId = req.params.id
@@ -62,12 +62,13 @@ export const createSaving = async (req, res) => {
     const interestNumber = (interestRate * + amountNumber) / 100
     const totalAmountNumber = presentAmountNumber + interestNumber
 
-    const savingBody = {
-      ...req.body,
-      present_amount: String(presentAmountNumber),
-      interest: String(interestNumber),
-      total_amount: String(totalAmountNumber),
-    }
+    const savingBody = req.body
+    // const savingBody = {
+    //   ...req.body,
+    //   present_amount: String(presentAmountNumber),
+    //   interest: String(interestNumber),
+    //   total_amount: String(totalAmountNumber),
+    // }
     const saving = await savingClient.create({data: savingBody})
     console.log(savingBody)
     res.status(200).json({status: 'success', data: saving})
