@@ -128,7 +128,7 @@ export const updateSaving = async (req, res) => {
     }
 
     // Calculate new values for the specific record
-    const newPresentAmount = Number(existingSaving.present_amount) + amountNumber;
+    const newPresentAmount = Number(existingSaving.total_amount) + amountNumber;
     const newInterest = (interestRateNumber * newPresentAmount) / 100;
     const newTotalAmount = newPresentAmount + newInterest;
 
