@@ -45,33 +45,33 @@ export const createSaving = async (req, res) => {
   try {
     const {id, amount, interest_rate} = req.body
 
-    const findSaving = await savingClient.findUnique({
-      where: {
-        id: Number(id)
-      }
-    })
+    // const findSaving = await savingClient.findUnique({
+    //   where: {
+    //     id: Number(id)
+    //   }
+    // })
 
-    if (findSaving) {
-      console.log(findSaving)
-      res.status(200).json({status: 'success', data: findSaving})
-    } else {
-      const amountNumber = Number(amount)
-      const interestRate = Number(interest_rate)
+    // if (findSaving) {
+    //   console.log(findSaving)
+    //   res.status(200).json({status: 'success', data: findSaving})
+    // } else {
+    const amountNumber = Number(amount)
+    const interestRate = Number(interest_rate)
 
-      const presentAmountNumber = amountNumber
-      const interestNumber = (interestRate * + amountNumber) / 100
-      const totalAmountNumber = presentAmountNumber + interestNumber
+    const presentAmountNumber = amountNumber
+    const interestNumber = (interestRate * + amountNumber) / 100
+    const totalAmountNumber = presentAmountNumber + interestNumber
 
-      const savingBody = {
-        ...req.body,
-        present_amount: String(presentAmountNumber),
-        interest: String(interestNumber),
-        total_amount: String(totalAmountNumber),
-      }
-      const saving = await savingClient.create({data: savingBody})
-      console.log(savingBody)
-      res.status(200).json({status: 'success', data: saving})
+    const savingBody = {
+      ...req.body,
+      present_amount: String(presentAmountNumber),
+      interest: String(interestNumber),
+      total_amount: String(totalAmountNumber),
     }
+    const saving = await savingClient.create({data: savingBody})
+    console.log(savingBody)
+    res.status(200).json({status: 'success', data: saving})
+    // }
 
 
 
