@@ -43,7 +43,7 @@ export const getSavingById = async (req, res) => {
 //@Path     /saving
 export const createSaving = async (req, res) => {
   try {
-    const {id, amount, interest_rate} = req.body
+    // const {id, amount, interest_rate} = req.body
 
     // const findSaving = await savingClient.findUnique({
     //   where: {
@@ -55,12 +55,12 @@ export const createSaving = async (req, res) => {
     //   console.log(findSaving)
     //   res.status(200).json({status: 'success', data: findSaving})
     // } else {
-    const amountNumber = Number(amount)
-    const interestRate = Number(interest_rate)
+    // const amountNumber = Number(amount)
+    // const interestRate = Number(interest_rate)
 
-    const presentAmountNumber = amountNumber
-    const interestNumber = (interestRate * + amountNumber) / 100
-    const totalAmountNumber = presentAmountNumber + interestNumber
+    // const presentAmountNumber = amountNumber
+    // const interestNumber = (interestRate * + amountNumber) / 100
+    // const totalAmountNumber = presentAmountNumber + interestNumber
 
     const savingBody = req.body
     // const savingBody = {

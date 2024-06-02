@@ -8,12 +8,12 @@ import {
   deleteSaving
 } from '../controllers/saving.controller'
 
-const incomeRouter = Router();
+const savingRouter = Router();
 
-incomeRouter.get('/savings/:id', getSavings)
-incomeRouter.get('/saving/:id', getSavingById)
-incomeRouter.post('/saving', createSaving)
-incomeRouter.patch('/saving/:id', updateSaving)
-incomeRouter.delete('/saving/:id', deleteSaving)
+savingRouter.get('/savings/:id', getSavings)
+savingRouter.get('/saving/:id', getSavingById)
+savingRouter.post('/saving', createSaving)
+savingRouter.patch('/saving/:id', updateSaving)
+savingRouter.delete('/saving/:id', deleteSaving)
 
-export default incomeRouter
+export default savingRouter
