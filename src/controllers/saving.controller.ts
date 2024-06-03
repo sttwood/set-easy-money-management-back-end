@@ -109,18 +109,21 @@ export const updateSaving = async (req, res) => {
     }
 
     // Convert amount to number for calculations
-    const amountNumber = Number(amount)
-    if (isNaN(amountNumber)) {
-      return res.status(400).json({status: 'error', message: 'Invalid amount'})
+    let amountNumber = Number(existingSaving.amount);
+    if (amount !== undefined) {
+      amountNumber = Number(amount)
+      if (isNaN(amountNumber)) {
+        return res.status(400).json({status: 'error', message: 'Invalid amount'})
+      }
     }
 
-    // Handle optional fields
-    let interestRate = existingSaving.interest_rate
-    if (interest_rate) {
+    // Handle interest_rate if provided
+    let interestRate = existingSaving.interest_rate;
+    if (interest_rate !== undefined) {
       interestRate = interest_rate
     }
 
-    const interestRateNumber = Number(interestRate)
+    const interestRateNumber = Number(interestRate);
     if (isNaN(interestRateNumber)) {
       return res.status(400).json({status: 'error', message: 'Invalid interest rate'})
     }
@@ -207,15 +210,63 @@ export const updateSaving = async (req, res) => {
 //@Path     /saving/:id
 export const deleteSaving = async (req, res) => {
   try {
-    const savingId = req.params.id
-    const saving = await savingClient.delete({
+    const savingId = Number(req.params.id)
+
+    // Fetch the saving record to be deleted
+    const existingSaving = await savingClient.findUnique({
       where: {
-        id: Number(savingId)
-      }
+        id: savingId,
+      },
     })
 
-    res.status(200).json({status: 'success', data: saving})
+    if (!existingSaving) {
+      return res.status(404).json({status: 'error', message: 'Saving record not found'})
+    }
+
+    // Delete the specified saving record
+    await savingClient.delete({
+      where: {
+        id: savingId,
+      },
+    })
+
+    // Fetch all savings records for the user ordered by date
+    const savings = await savingClient.findMany({
+      where: {
+        user_id: existingSaving.user_id,
+      },
+      orderBy: {
+        id: 'asc',
+      },
+    })
+
+    // Initialize the previous total amount to 0
+    let prevTotalAmount = 0
+
+    // Recalculate subsequent records
+    for (let i = 0; i < savings.length; i++) {
+      const saving = savings[ i ]
+      const newPresentAmount = prevTotalAmount + Number(saving.amount)
+      const newInterest = (Number(saving.interest_rate) * newPresentAmount) / 100
+      const newTotalAmount = newPresentAmount + newInterest
+
+      await savingClient.update({
+        where: {
+          id: saving.id,
+        },
+        data: {
+          present_amount: String(newPresentAmount),
+          interest: String(newInterest),
+          total_amount: String(newTotalAmount),
+        },
+      })
+
+      prevTotalAmount = newTotalAmount
+    }
+
+    res.status(200).json({status: 'success', message: 'Saving record deleted and subsequent records recalculated'})
   } catch (error) {
     console.error(error)
+    res.status(500).json({status: 'error', message: 'Internal Server Error'})
   }
 }
